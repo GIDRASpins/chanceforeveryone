@@ -48,6 +48,7 @@ const interviewQuestions = {
         q4_continue: "Відмінно! Тоді далі зі мною...",
         q4_change: "Цікаво! Давайте знайдемо вам нову сферу.",
         q5: "**Яка галузь вас цікавить?** Напишіть її назву або скажіть 'не знаю', якщо ще невизначились",
+        q5_knowledge: "**Чи маєте ви базові знання з цієї галузі?** (відповідьте 'так' або 'ні')",
         q5_guidance: "Я допоможу вам знайти правильний напрямок! Відповідь на кілька питань:",
         q5_1: "**1. Чи є якісь активності або хобі, які вам подобаються?** (наприклад: читання книг, спорт, малювання, конструювання тощо)",
         q5_2: "**2. Які предмети в школі або університеті найбільш імпонували?** (наприклад: математика, історія, фізика, мистецтво тощо)",
@@ -68,11 +69,12 @@ const interviewQuestions = {
         q4_continue: "Perfect! Let's continue...",
         q4_change: "Interesting! Let's find a new field for you.",
         q5: "**What field interests you?** Write its name or say 'I don\\'t know' if you\\'re still deciding",
+        q5_knowledge: "**Do you have any basic knowledge of this field?** (Answer 'yes' or 'no')",
         q5_guidance: "I'll help you find the right direction!  Answer a few questions:",
-        q5_1: "**1️. Are there any activities or hobbies you enjoy?** (e.g., reading, sports, drawing, building, etc.)",
-        q5_2: "**2️. What subjects in school or university did you enjoy most?** (e.g., math, history, physics, art, etc.)",
-        q5_3: "**3️. Do you prefer working in a team or alone?** (Answer: 'in a team' or 'alone')",
-        q5_4: "**4️. Choose the field closest to you:**\n\n **Technical** - love solving logic tasks, interested in gadgets, mechanisms\n\n **Social** - love working with people, supporting, communication is important\n\n **Humanitarian** - creative thinking, read or write texts/poetry, interested in art, history\n\n **Sports** - regularly do sports, interested in nutrition, human body\n\n **Medical** - want to help people, interested in biology, anatomy, disciplined\n\n(Write: Technical, Social, Humanitarian, Sports or Medical)",
+        q5_1: "**1️⃣ Are there any activities or hobbies you enjoy?** (e.g., reading, sports, drawing, building, etc.)",
+        q5_2: "**2️⃣ What subjects in school or university did you enjoy most?** (e.g., math, history, physics, art, etc.)",
+        q5_3: "**3️⃣ Do you prefer working in a team or alone?** (Answer: 'in a team' or 'alone')",
+        q5_4: "**4️⃣ Choose the field closest to you:**\n\n **Technical** - love solving logic tasks, interested in gadgets, mechanisms\n\n **Social** - love working with people, supporting, communication is important\n\n **Humanitarian** - creative thinking, read or write texts/poetry, interested in art, history\n\n **Sports** - regularly do sports, interested in nutrition, human body\n\n **Medical** - want to help people, interested in biology, anatomy, disciplined\n\n(Write: Technical, Social, Humanitarian, Sports or Medical)",
         categories_desc: {
             "Technical": "Technologist, programmer, engineer, analyst, system architect, 3D designer, roboticist",
             "Social": "HR manager, recruiter, social worker, salesman, team leader, consultant, psychologist",
@@ -295,7 +297,7 @@ function updateProfileStats() {
 function initializeInterview() {
     const chatWindow = document.getElementById('chat-window');
     
-    // Якщо є збережений чат, відновлюємо його
+    // Якщо є збережений чат, відновлюємо його повністю
     if (chatHistory.length > 0) {
         // Очищаємо весь чат
         chatWindow.innerHTML = '';
@@ -309,9 +311,8 @@ function initializeInterview() {
         });
         chatWindow.scrollTop = chatWindow.scrollHeight;
     } else {
-        // Перший раз - очищаємо лише повідомлення користувача, залишаємо перше питання
-        const userMessages = chatWindow.querySelectorAll('.user-msg');
-        userMessages.forEach(msg => msg.remove());
+        // Перший раз - перше питання вже в HTML, просто скроллимо вниз
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     }
     
     interviewState.stage = 1;
@@ -324,15 +325,23 @@ function sendMessage() {
     
     if (!message) return;
     
-    // Приховуємо початкове питання коли користувач починає писати
+    // При першій відповіді, зберігаємо перше питання в chatHistory
     const initialQuestion = document.getElementById('initial-question');
-    if (initialQuestion) {
-        initialQuestion.style.display = 'none';
+    if (initialQuestion && chatHistory.length === 0) {
+        saveChatMessage(initialQuestion.innerHTML, false);
     }
     
     addUserMessage(message);
     input.value = '';
     input.focus();
+    
+    // Скроллимо вниз щоб було видно нові повідомлення
+    setTimeout(() => {
+        const chatWindow = document.getElementById('chat-window');
+        if (chatWindow) {
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+    }, 100);
     
     processInterviewResponse(message);
     saveInterviewState();
@@ -393,6 +402,11 @@ function isResponseValid(userInput, stage) {
         case 4: // Галузь - зазвичай одне слово або фраза
             return input.length > 2;
             
+        case 4.5: // Базові знання - так/ні питання
+            return input.includes('так') || input.includes('yes') || input.includes('да') ||
+                   input.includes('ні') || input.includes('no') || input.includes('нет') ||
+                   input.includes('так,') || input.includes('ні,');
+            
         case 5: // Хобі - активності
             const hobbiesKeywords = ['читання|спорт|малювання|конструювання|музика|танці|програмування|гра|путешествие|варіння|готування|рукоділля|йога|фітнес|ігор|активність|займаюс|люблю|цікавл|подобається|робота|навчання|фото|відео|книг|фільм|серіал|театр|кіно|опера|концерт|вишиванка|мода|мода|прогулянка|пісні|інтернет|блог|соціальні'];
             return hobbiesKeywords.some(keyword => {
@@ -432,6 +446,7 @@ function getInvalidResponseMessage(stage) {
             2: "Будь ласка, напишіть ваші навички та вміння.",
             3: "Будь ласка, відповідьте 'Так' або 'Ні'.",
             4: "Будь ласка, напишіть назву галузі, яка вас цікавить.",
+            4.5: "Будь ласка, відповідьте 'Так' або 'Ні' про базові знання.",
             5: "Будь ласка, напишіть свої хобі та улюблені активності.",
             5.1: "Будь ласка, напишіть улюблені предмети з школи або університету.",
             5.2: "Будь ласка, відповідьте чи ви бажаєте працювати у команді чи поодинці.",
@@ -442,6 +457,7 @@ function getInvalidResponseMessage(stage) {
             2: "Please write your skills and abilities.",
             3: "Please answer 'Yes' or 'No'.",
             4: "Please write the name of a field that interests you.",
+            4.5: "Please answer 'Yes' or 'No' about your knowledge of this field.",
             5: "Please write your hobbies and favorite activities.",
             5.1: "Please write your favorite subjects from school or university.",
             5.2: "Please answer if you prefer to work in a team or alone.",
@@ -500,9 +516,15 @@ function processInterviewResponse(userInput) {
                     setTimeout(() => addAIMessage(interviewQuestions[currentLang].q5_1), 1000);
                 }, 500);
             } else {
-                interviewState.stage = 6; // Results
-                setTimeout(() => generateRecommendations(userInput), 500);
+                interviewState.stage = 4.5; // Питання про базові знання
+                setTimeout(() => addAIMessage(interviewQuestions[currentLang].q5_knowledge), 500);
             }
+            break;
+            
+        case 4.5: // Базові знання з обраної галузі
+            interviewState.fieldKnowledge = userInput;
+            interviewState.stage = 6; // Results
+            setTimeout(() => generateRecommendations(interviewState.fieldInterest), 500);
             break;
             
         case 5: // Оцінка - хобі
@@ -545,6 +567,7 @@ function generateRecommendations(fieldName = null) {
         education: interviewState.education,
         skills: interviewState.skills,
         fieldInterest: fieldName || interviewState.fieldInterest,
+        fieldKnowledge: interviewState.fieldKnowledge,
         category: interviewState.categoryChoice || fieldName,
         hobbies: interviewState.hobbies,
         bestSubjects: interviewState.bestSubjects,
@@ -578,16 +601,18 @@ function generateRecommendations(fieldName = null) {
         (lang === 'ua' ? 'Спеціаліст в обраній галузі' : 'Specialist in chosen field');
     
     const resultText = lang === 'ua' ? `
-**Ваш профіль**
+**🎉 Ваш профіль**
 
 **Освіта:** ${profile.education}
 **Навички:** ${profile.skills}
 **Вибрана сфера:** ${profile.category}
-${profile.hobbies ? `**Hobbies:** ${profile.hobbies}` : ''}
-${profile.bestSubjects ? `**Favorite subjects:** ${profile.bestSubjects}` : ''}
-${profile.teamWork ? `**Work type:** ${profile.teamWork}` : ''}
+${profile.fieldInterest && profile.fieldInterest !== profile.category ? `**Обрана галузь:** ${profile.fieldInterest}` : ''}
+${profile.fieldKnowledge ? `**Базові знання:** ${profile.fieldKnowledge}` : ''}
+${profile.hobbies ? `**Хобі:** ${profile.hobbies}` : ''}
+${profile.bestSubjects ? `**Улюблені предмети:** ${profile.bestSubjects}` : ''}
+${profile.teamWork ? `**Тип роботи:** ${profile.teamWork}` : ''}
 
-**Рекомендовані напрямки:**
+**💼 Рекомендовані напрямки:**
 ${recommendedJobs}
 
 Я допоміг вам визначити можливі напрямки розвитку! Тепер у вас є повний доступ до курсів, вакансій та грантів в хабі.
@@ -597,11 +622,13 @@ ${recommendedJobs}
 **Education:** ${profile.education}
 **Skills:** ${profile.skills}
 **Chosen field:** ${profile.category}
+${profile.fieldInterest && profile.fieldInterest !== profile.category ? `**Chosen sector:** ${profile.fieldInterest}` : ''}
+${profile.fieldKnowledge ? `**Basic knowledge:** ${profile.fieldKnowledge}` : ''}
 ${profile.hobbies ? `**Hobbies:** ${profile.hobbies}` : ''}
 ${profile.bestSubjects ? `**Favorite subjects:** ${profile.bestSubjects}` : ''}
 ${profile.teamWork ? `**Work type:** ${profile.teamWork}` : ''}
 
-**Recommended directions:**
+**💼 Recommended directions:**
 ${recommendedJobs}
 
 I've helped you identify possible career paths! You now have full access to courses, jobs, and grants in our hub.
@@ -650,6 +677,16 @@ function showResults(profile) {
             <h3>${lang === 'ua' ? 'Напрямки роботи' : 'Job directions'}</h3>
             <p>${interviewQuestions[lang].categories_desc[profile.category]}</p>
         </div>
+        ${profile.fieldInterest && profile.fieldInterest !== profile.category ? `
+        <div class="result-section">
+            <h3>${lang === 'ua' ? 'Обрана галузь' : 'Chosen sector'}</h3>
+            <p>${profile.fieldInterest}</p>
+        </div>` : ''}
+        ${profile.fieldKnowledge ? `
+        <div class="result-section">
+            <h3>${lang === 'ua' ? 'Базові знання' : 'Basic knowledge'}</h3>
+            <p>${profile.fieldKnowledge}</p>
+        </div>` : ''}
         ${profile.hobbies ? `
         <div class="result-section">
             <h3>${lang === 'ua' ? 'Хобі' : 'Hobbies'}</h3>
@@ -704,5 +741,3 @@ function updateResults() {
         showResults(profile);
     }
 }
-
-
