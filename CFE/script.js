@@ -578,7 +578,7 @@ function generateRecommendations(fieldName = null) {
         (lang === 'ua' ? 'Спеціаліст в обраній галузі' : 'Specialist in chosen field');
     
     const resultText = lang === 'ua' ? `
-**🎉 Ваш профіль**
+**Ваш профіль**
 
 **Освіта:** ${profile.education}
 **Навички:** ${profile.skills}
@@ -587,7 +587,7 @@ ${profile.hobbies ? `**Hobbies:** ${profile.hobbies}` : ''}
 ${profile.bestSubjects ? `**Favorite subjects:** ${profile.bestSubjects}` : ''}
 ${profile.teamWork ? `**Work type:** ${profile.teamWork}` : ''}
 
-**💼 Рекомендовані напрямки:**
+**Рекомендовані напрямки:**
 ${recommendedJobs}
 
 Я допоміг вам визначити можливі напрямки розвитку! Тепер у вас є повний доступ до курсів, вакансій та грантів в хабі.
@@ -601,7 +601,7 @@ ${profile.hobbies ? `**Hobbies:** ${profile.hobbies}` : ''}
 ${profile.bestSubjects ? `**Favorite subjects:** ${profile.bestSubjects}` : ''}
 ${profile.teamWork ? `**Work type:** ${profile.teamWork}` : ''}
 
-**💼 Recommended directions:**
+**Recommended directions:**
 ${recommendedJobs}
 
 I've helped you identify possible career paths! You now have full access to courses, jobs, and grants in our hub.
@@ -704,4 +704,5 @@ function updateResults() {
         showResults(profile);
     }
 }
+
 
