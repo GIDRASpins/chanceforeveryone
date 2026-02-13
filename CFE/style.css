@@ -286,4 +286,5 @@ input:focus, textarea:focus { border-color: var(--primary); background: rgba(255
 }
 
 .result-section:nth-child(3) p {
- 
+    color: white;
+}
