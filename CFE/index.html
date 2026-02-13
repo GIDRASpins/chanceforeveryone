@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chance for Everyone | AI Career Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="sidebar">
+        <div class="logo">CFE<span>.ai</span></div>
+        <ul class="nav-links">
+            <li onclick="showPage('dashboard')" id="l-home" class="active" data-key="nav_home">Панель</li>
+            <li onclick="handleProtectedAction('interview')" data-key="nav_interview">AI Інтерв'ю</li>
+            <li onclick="handleProtectedAction('education')" data-key="nav_edu">Освіта & Гранти</li>
+            <li onclick="handleProtectedAction('jobs')" data-key="nav_jobs">Пошук роботи</li>
+            <li onclick="handleProtectedAction('resume')" data-key="nav_resume">AI конструктор резюме</li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <div class="lang-switcher">
+                <button onclick="changeLang('ua')">UA</button>
+                <button onclick="changeLang('en')">EN</button>
+            </div>
+            <div id="auth-status" class="user-profile-link" onclick="handleProtectedAction('profile')">
+                <span data-key="status_guest">Гість</span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        
+        <section id="dashboard" class="page active">
+            <header class="hero">
+                <h1 data-key="hero_title">Шанс для кожного</h1>
+                <p data-key="hero_desc">Ваш персональний шлях від навчання до працевлаштування за допомогою ШІ.</p>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 data-key="stat_1_title">Гранти</h3>
+                        <p>500+ актуальних пропозицій</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 data-key="stat_2_title">Вакансії</h3>
+                        <p>Без досвіду роботи</p>
+                    </div>
+                </div>
+            </header>
+        </section>
+
+<section id="auth" class="page">
+    <div class="auth-card">
+        <h2 id="auth-title" data-key="auth_title">Реєстрація</h2>
+        <div class="input-group">
+            <input type="text" id="user-name" placeholder="Ваше ім'я">
+            <input type="email" id="user-email" placeholder="Email" required>
+            <input type="password" id="user-pass" placeholder="Пароль" required>
+        </div>
+        <button class="btn-main" id="auth-submit-btn" onclick="handleAuth()" data-key="auth_btn">Створити акаунт</button>
+        
+        <p class="auth-toggle-text" style="margin-top: 15px; font-size: 13px; color: var(--text-dim);">
+            <span id="toggle-desc">Вже маєте акаунт?</span> 
+            <span onclick="toggleAuthMode()" id="toggle-link" style="color: var(--primary); cursor: pointer; font-weight: 600;">Увійти</span>
+        </p>
+    </div>
+</section>
+
+<section id="profile" class="page">
+    <div class="profile-container">
+        
+        <div class="profile-header">
+            <div class="avatar-upload">
+                <div class="avatar-preview">
+                    <img id="profile-img" src="https://via.placeholder.com/150" alt="Avatar">
+                </div>
+                <input type="file" id="image-input" accept="image/*" hidden>
+                <button class="btn-small" onclick="document.getElementById('image-input').click()" style="margin-top:10px;">Змінити фото</button>
+            </div>
+            <div class="profile-info">
+                <h1 id="profile-name-display">Ім'я</h1>
+                <p id="profile-email-display" style="color: var(--bg-dark);">email@example.com</p>
+            </div>
+        </div>
+
+        <div class="profile-grid">
+            <div class="profile-card">
+                <h3 data-key="prof_resume">Резюме</h3>
+                <textarea id="resume-text" placeholder="Опишіть ваш досвід..."></textarea>
+                <button class="btn-main" onclick="saveResume()">Зберегти резюме</button>
+            </div>
+
+            <div class="profile-card">
+                <h3 data-key="prof_courses">Мої курси</h3>
+                <div class="course-stats">
+                    <div style="text-align:center; margin: 20px 0;">
+                        <span class="stat-num" id="completed-count" style="font-size: 32px; color: var(--primary); display:block; font-weight:bold;">0</span>
+                        <small data-key="prof_completed">Пройдено</small>
+                    </div>
+                </div>
+                <ul id="active-courses-list" style="list-style: none; color: var(--text-dim); font-size: 14px;">
+                    </ul>
+            </div>
+        </div>
+
+        <div class="logout-footer">
+            <button class="btn-logout" onclick="logout()" data-key="logout_btn">Вийти з акаунта</button>
+        </div>
+
+    </div>
+</section>
+
+        <section id="interview" class="page">
+            <div class="chat-container">
+                <div id="chat-window" class="chat-window"></div>
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Введіть відповідь...">
+                    <button class="btn-main" style="width: auto;" onclick="sendMessage()" data-key="chat_send">Надіслати</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="education" class="page">
+            <h2 data-key="edu_head">Освіта</h2>
+            <div id="edu-content" class="cards-grid"></div>
+        </section>
+
+        <section id="jobs" class="page">
+            <h2 data-key="jobs_head">Робота</h2>
+            <div id="jobs-content" class="cards-grid"></div>
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
