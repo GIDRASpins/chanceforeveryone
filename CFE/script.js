@@ -69,10 +69,10 @@ const interviewQuestions = {
         q4_change: "Interesting! Let's find a new field for you.",
         q5: "**What field interests you?** Write its name or say 'I don\\'t know' if you\\'re still deciding",
         q5_guidance: "I'll help you find the right direction!  Answer a few questions:",
-        q5_1: "**1️⃣ Are there any activities or hobbies you enjoy?** (e.g., reading, sports, drawing, building, etc.)",
-        q5_2: "**2️⃣ What subjects in school or university did you enjoy most?** (e.g., math, history, physics, art, etc.)",
-        q5_3: "**3️⃣ Do you prefer working in a team or alone?** (Answer: 'in a team' or 'alone')",
-        q5_4: "**4️⃣ Choose the field closest to you:**\n\n **Technical** - love solving logic tasks, interested in gadgets, mechanisms\n\n **Social** - love working with people, supporting, communication is important\n\n **Humanitarian** - creative thinking, read or write texts/poetry, interested in art, history\n\n **Sports** - regularly do sports, interested in nutrition, human body\n\n **Medical** - want to help people, interested in biology, anatomy, disciplined\n\n(Write: Technical, Social, Humanitarian, Sports or Medical)",
+        q5_1: "**1️. Are there any activities or hobbies you enjoy?** (e.g., reading, sports, drawing, building, etc.)",
+        q5_2: "**2️. What subjects in school or university did you enjoy most?** (e.g., math, history, physics, art, etc.)",
+        q5_3: "**3️. Do you prefer working in a team or alone?** (Answer: 'in a team' or 'alone')",
+        q5_4: "**4️. Choose the field closest to you:**\n\n **Technical** - love solving logic tasks, interested in gadgets, mechanisms\n\n **Social** - love working with people, supporting, communication is important\n\n **Humanitarian** - creative thinking, read or write texts/poetry, interested in art, history\n\n **Sports** - regularly do sports, interested in nutrition, human body\n\n **Medical** - want to help people, interested in biology, anatomy, disciplined\n\n(Write: Technical, Social, Humanitarian, Sports or Medical)",
         categories_desc: {
             "Technical": "Technologist, programmer, engineer, analyst, system architect, 3D designer, roboticist",
             "Social": "HR manager, recruiter, social worker, salesman, team leader, consultant, psychologist",
@@ -704,3 +704,4 @@ function updateResults() {
         showResults(profile);
     }
 }
+
