@@ -17,7 +17,12 @@ let interviewState = {
     bestSubjects: "",
     teamWork: "",
     categoryChoice: "",
-    testAnswers: {}
+    testAnswers: {},
+    preInterview: {
+        city: "",
+        birthYear: "",
+        studyPlace: ""
+    }
 };
 
 // Масив для збереження діалогу чату
@@ -30,6 +35,14 @@ const dictionary = {
         auth_login_title: "Вхід", auth_btn: "Створити акаунт", auth_login_btn: "Увійти",
         prof_resume: "Резюме", prof_courses: "Мої курси", prof_completed: "Пройдено",
         prof_ongoing: "У процесі", logout_btn: "Вийти з акаунта", nav_resume: "AI конструктор резюме", nav_courses: "Курси"
+        ,
+        pre_interview_title: "Коротка інформація перед інтерв'ю",
+        pre_city_placeholder: "Місто проживання",
+        pre_birthyear_placeholder: "Рік народження",
+        pre_studyplace_placeholder: "Місце навчання",
+        pre_save_btn: "Зберегти та почати інтерв'ю",
+        chat_input_placeholder: "Введіть відповідь...",
+        send_btn: "Надіслати"
     },
     en: {
         nav_home: "Dashboard", nav_interview: "AI Interview", nav_edu: "Education", nav_jobs: "Jobs",
@@ -37,8 +50,22 @@ const dictionary = {
         auth_login_title: "Login", auth_btn: "Sign Up", auth_login_btn: "Sign In",
         prof_resume: "Resume", prof_courses: "My Courses", prof_completed: "Completed",
         prof_ongoing: "Ongoing", logout_btn: "Log Out", nav_resume: "AI resume builder", nav_courses: "Courses"
+        ,
+        pre_interview_title: "Pre-interview info",
+        pre_city_placeholder: "City of residence",
+        pre_birthyear_placeholder: "Birth year",
+        pre_studyplace_placeholder: "Study place",
+        pre_save_btn: "Save and start interview",
+        chat_input_placeholder: "Type your answer...",
+        send_btn: "Send"
     }
 };
+
+// Helper: convert simple markdown (bold + newlines) to HTML
+function markdownToHtml(text) {
+    if (!text) return '';
+    return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>');
+}
 
 const interviewQuestions = {
     ua: {
@@ -100,6 +127,29 @@ function saveInterviewState() {
     saveChatHistory();
 }
 
+// Збереження короткої інформації перед інтерв'ю (місто, рік, місце навчання)
+function savePreInterview() {
+    const city = document.getElementById('pre-city')?.value.trim() || '';
+    const birthYear = document.getElementById('pre-birthyear')?.value.trim() || '';
+    const studyPlace = document.getElementById('pre-studyplace')?.value.trim() || '';
+
+    interviewState.preInterview = { city, birthYear, studyPlace };
+    saveInterviewState();
+
+    const preDiv = document.querySelector('.pre-interview');
+    if (preDiv) preDiv.style.display = 'none';
+
+    addAIMessage(currentLang === 'ua' ? 'Дякую, збережено. Продовжимо інтерв\'ю.' : 'Thanks, saved. Let\'s continue the interview.');
+    setTimeout(() => initializeInterview(), 600);
+}
+
+// `webSearch()` removed — web-analyzer UI deleted per user request.
+
+function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 // Завантаження історії чату
 function loadChatHistory() {
     const saved = localStorage.getItem('interviewChatHistory');
@@ -130,6 +180,13 @@ window.onload = () => {
     // Инициализируем визуальный переключатель
     changeLang(currentLang); 
     loadInterviewState();
+    // If pre-interview info already saved, hide the form
+    try {
+        if (interviewState.preInterview && (interviewState.preInterview.city || interviewState.preInterview.birthYear || interviewState.preInterview.studyPlace)) {
+            const preDiv = document.querySelector('.pre-interview');
+            if (preDiv) preDiv.style.display = 'none';
+        }
+    } catch(e) {}
     if (userChoice) updateResults();
 };
 
@@ -290,6 +347,39 @@ function changeLang(lang) {
         const key = el.getAttribute('data-key');
         if (dictionary[lang][key]) el.innerText = dictionary[lang][key];
     });
+
+    // 3. Update interview / AI container texts and placeholders
+    try {
+        const qEl = document.getElementById('initial-question');
+        if (qEl && interviewQuestions[lang] && interviewQuestions[lang].q1) {
+            qEl.innerHTML = markdownToHtml(interviewQuestions[lang].q1);
+        }
+
+        const chatInput = document.getElementById('chat-input');
+        if (chatInput && dictionary[lang].chat_input_placeholder) {
+            chatInput.placeholder = dictionary[lang].chat_input_placeholder;
+        }
+
+        const sendBtn = document.getElementById('chat-send-btn');
+        if (sendBtn && dictionary[lang].send_btn) sendBtn.innerText = dictionary[lang].send_btn;
+
+        const preTitle = document.getElementById('pre-interview-title');
+        if (preTitle && dictionary[lang].pre_interview_title) preTitle.innerText = dictionary[lang].pre_interview_title;
+
+        const preCity = document.getElementById('pre-city');
+        if (preCity && dictionary[lang].pre_city_placeholder) preCity.placeholder = dictionary[lang].pre_city_placeholder;
+
+        const preBirth = document.getElementById('pre-birthyear');
+        if (preBirth && dictionary[lang].pre_birthyear_placeholder) preBirth.placeholder = dictionary[lang].pre_birthyear_placeholder;
+
+        const preStudy = document.getElementById('pre-studyplace');
+        if (preStudy && dictionary[lang].pre_studyplace_placeholder) preStudy.placeholder = dictionary[lang].pre_studyplace_placeholder;
+
+        const preSave = document.getElementById('pre-save-btn');
+        if (preSave && dictionary[lang].pre_save_btn) preSave.innerText = dictionary[lang].pre_save_btn;
+    } catch (e) {
+        // ignore if elements missing
+    }
 }
 
 // Обробка завантаження аватара користувача
@@ -581,7 +671,7 @@ function processInterviewResponse(userInput) {
     }
 }
 
-function generateRecommendations(fieldName = null) {
+async function generateRecommendations(fieldName = null) {
     const lang = currentLang;
     let profile = {
         education: interviewState.education,
@@ -589,6 +679,9 @@ function generateRecommendations(fieldName = null) {
         fieldInterest: fieldName || interviewState.fieldInterest,
         fieldKnowledge: interviewState.fieldKnowledge,
         category: interviewState.categoryChoice || fieldName,
+        city: interviewState.preInterview ? interviewState.preInterview.city : "",
+        birthYear: interviewState.preInterview ? interviewState.preInterview.birthYear : "",
+        studyPlace: interviewState.preInterview ? interviewState.preInterview.studyPlace : "",
         hobbies: interviewState.hobbies,
         bestSubjects: interviewState.bestSubjects,
         teamWork: interviewState.teamWork
@@ -614,58 +707,52 @@ function generateRecommendations(fieldName = null) {
     }
     
     profile.category = profile.category || (lang === 'ua' ? 'Технічна' : 'Technical');
-    
-    // Генерація текстових рекомендацій
-    const categoryDescriptions = interviewQuestions[lang].categories_desc;
-    const recommendedJobs = categoryDescriptions[profile.category] || 
-        (lang === 'ua' ? 'Спеціаліст в обраній галузі' : 'Specialist in chosen field');
-    
-    const resultText = lang === 'ua' ? `
-**🎉 Ваш профіль**
 
-**Освіта:** ${profile.education}
-**Навички:** ${profile.skills}
-**Вибрана сфера:** ${profile.category}
-${profile.fieldInterest && profile.fieldInterest !== profile.category ? `**Обрана галузь:** ${profile.fieldInterest}` : ''}
-${profile.fieldKnowledge ? `**Базові знання:** ${profile.fieldKnowledge}` : ''}
-${profile.hobbies ? `**Хобі:** ${profile.hobbies}` : ''}
-${profile.bestSubjects ? `**Улюблені предмети:** ${profile.bestSubjects}` : ''}
-${profile.teamWork ? `**Тип роботи:** ${profile.teamWork}` : ''}
-
-**💼 Рекомендовані напрямки:**
-${recommendedJobs}
-
-Я допоміг вам визначити можливі напрямки розвитку! Тепер у вас є повний доступ до курсів, вакансій та грантів в хабі.
-    ` : `
-**Your Profile**
-
-**Education:** ${profile.education}
-**Skills:** ${profile.skills}
-**Chosen field:** ${profile.category}
-${profile.fieldInterest && profile.fieldInterest !== profile.category ? `**Chosen sector:** ${profile.fieldInterest}` : ''}
-${profile.fieldKnowledge ? `**Basic knowledge:** ${profile.fieldKnowledge}` : ''}
-${profile.hobbies ? `**Hobbies:** ${profile.hobbies}` : ''}
-${profile.bestSubjects ? `**Favorite subjects:** ${profile.bestSubjects}` : ''}
-${profile.teamWork ? `**Work type:** ${profile.teamWork}` : ''}
-
-**💼 Recommended directions:**
-${recommendedJobs}
-
-I've helped you identify possible career paths! You now have full access to courses, jobs, and grants in our hub.
-    `;
-    
-    // Збереження результатів у локальне сховище
+    // Save profile locally
     userChoice = profile.category;
     localStorage.setItem('userChoice', userChoice);
     localStorage.setItem('userProfile', JSON.stringify(profile));
-    
-    // Показування результатів після затримки для кращого UX
+
+    // Try to generate a nicely formatted final menu via backend generative API
+    addAIMessage(lang === 'ua' ? 'Генерую персоналізоване резюме та меню...' : 'Generating personalized summary and menu...');
+
+    try {
+        const r = await fetch('/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ profile, lang })
+        });
+
+        if (!r.ok) {
+            throw new Error((await r.json().catch(() => ({}))).error || 'generate_failed');
+        }
+
+        const data = await r.json();
+        if (data.aiText) {
+            // Show AI result and then show results view
+            setTimeout(() => {
+                addAIMessage(data.aiText);
+                setTimeout(() => showResults(profile), 1200);
+            }, 800);
+            return;
+        }
+    } catch (e) {
+        // fallback to built-in static summary if generation fails
+        console.warn('Generation failed, falling back to static summary:', e.message);
+    }
+
+    // Fallback static summary (if AI generation unavailable)
+    const categoryDescriptions = interviewQuestions[lang].categories_desc;
+    const recommendedJobs = categoryDescriptions[profile.category] || (lang === 'ua' ? 'Спеціаліст в обраній галузі' : 'Specialist in chosen field');
+
+    const resultText = lang === 'ua' ? `\n**🎉 Ваш профіль**\n\n**Освіта:** ${profile.education}\n**Навички:** ${profile.skills}\n**Вибрана сфера:** ${profile.category}\n${profile.fieldInterest && profile.fieldInterest !== profile.category ? `**Обрана галузь:** ${profile.fieldInterest}` : ''}\n${profile.fieldKnowledge ? `**Базові знання:** ${profile.fieldKnowledge}` : ''}\n${profile.hobbies ? `**Хобі:** ${profile.hobbies}` : ''}\n${profile.bestSubjects ? `**Улюблені предмети:** ${profile.bestSubjects}` : ''}\n${profile.teamWork ? `**Тип роботи:** ${profile.teamWork}` : ''}\n\n**💼 Рекомендовані напрямки:**\n${recommendedJobs}\n\nЯ допоміг вам визначити можливі напрямки розвитку! Тепер у вас є повний доступ до курсів, вакансій та грантів в хабі.` : `\n**Your Profile**\n\n**Education:** ${profile.education}\n**Skills:** ${profile.skills}\n**Chosen field:** ${profile.category}\n${profile.fieldInterest && profile.fieldInterest !== profile.category ? `**Chosen sector:** ${profile.fieldInterest}` : ''}\n${profile.fieldKnowledge ? `**Basic knowledge:** ${profile.fieldKnowledge}` : ''}\n${profile.hobbies ? `**Hobbies:** ${profile.hobbies}` : ''}\n${profile.bestSubjects ? `**Favorite subjects:** ${profile.bestSubjects}` : ''}\n${profile.teamWork ? `**Work type:** ${profile.teamWork}` : ''}\n\n**💼 Recommended directions:**\n${recommendedJobs}\n\nI've helped you identify possible career paths! You now have full access to courses, jobs, and grants in our hub.`;
+
     setTimeout(() => {
         addAIMessage(resultText);
         setTimeout(() => {
             showResults(profile);
-        }, 2000);
-    }, 1000);
+        }, 1000);
+    }, 800);
 }
 
 function showResults(profile) {
@@ -681,6 +768,18 @@ function showResults(profile) {
     const lang = currentLang;
     
     profileResults.innerHTML = `
+        <div class="result-section">
+            <h3>${lang === 'ua' ? 'Місто' : 'City'}</h3>
+            <p>${profile.city || '-'}</p>
+        </div>
+        <div class="result-section">
+            <h3>${lang === 'ua' ? 'Рік народження' : 'Birth year'}</h3>
+            <p>${profile.birthYear || '-'}</p>
+        </div>
+        <div class="result-section">
+            <h3>${lang === 'ua' ? 'Місце навчання' : 'Study place'}</h3>
+            <p>${profile.studyPlace || '-'}</p>
+        </div>
         <div class="result-section">
             <h3>${lang === 'ua' ? 'Освіта' : 'Education'}</h3>
             <p>${profile.education}</p>
@@ -732,7 +831,12 @@ function resetInterview() {
         bestSubjects: "",
         teamWork: "",
         categoryChoice: "",
-        testAnswers: {}
+        testAnswers: {},
+        preInterview: {
+            city: "",
+            birthYear: "",
+            studyPlace: ""
+        }
     };
     chatHistory = []; // Очищаємо історію чату
     saveInterviewState();
@@ -789,156 +893,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
-});let isRegistered = false;
-let isLoginMode = false;
-let currentUser = null;
-let currentLang = localStorage.getItem('cfe_lang') || 'ua';
-let userChoice = localStorage.getItem('userChoice') || "";
-
-const dictionary = {
-    ua: {
-        nav_home: "Панель", nav_interview: "AI Інтерв'ю", nav_edu: "Освіта & Гранти", nav_jobs: "Пошук роботи",
-        status_guest: "Гість", status_user: "Користувач: ", auth_title: "Реєстрація",
-        auth_login_title: "Вхід", auth_btn: "Створити акаунт", auth_login_btn: "Увійти",
-        prof_resume: "Резюме", prof_courses: "Мої курси", prof_completed: "Пройдено",
-        prof_ongoing: "У процесі", logout_btn: "Вийти з акаунта", nav_resume: "AI конструктор резюме"
-    },
-    en: {
-        nav_home: "Dashboard", nav_interview: "AI Interview", nav_edu: "Education", nav_jobs: "Jobs",
-        status_guest: "Guest", status_user: "User: ", auth_title: "Registration",
-        auth_login_title: "Login", auth_btn: "Sign Up", auth_login_btn: "Sign In",
-        prof_resume: "Resume", prof_courses: "My Courses", prof_completed: "Completed",
-        prof_ongoing: "Ongoing", logout_btn: "Log Out", nav_resume: "AI resume builder"
-    }
-};
-
-window.onload = () => {
-    checkAuth();
-    changeLang(currentLang);
-    if (userChoice) updateResults();
-};
-
-function checkAuth() {
-    const saved = localStorage.getItem('cfe_user');
-    if (saved) {
-        currentUser = JSON.parse(saved);
-        isRegistered = true;
-        updateUI();
-    }
-}
-
-// Перемикання Вхід/Реєстрація
-function toggleAuthMode() {
-    isLoginMode = !isLoginMode;
-    const nameField = document.getElementById('user-name');
-    const title = document.getElementById('auth-title');
-    const submitBtn = document.getElementById('auth-submit-btn');
-    const toggleLink = document.getElementById('toggle-link');
-
-    if (isLoginMode) {
-        title.innerText = dictionary[currentLang].auth_login_title;
-        submitBtn.innerText = dictionary[currentLang].auth_login_btn;
-        nameField.classList.add('hidden');
-        toggleLink.innerText = currentLang === 'ua' ? "Зареєструватися" : "Register";
-    } else {
-        title.innerText = dictionary[currentLang].auth_title;
-        submitBtn.innerText = dictionary[currentLang].auth_btn;
-        nameField.classList.remove('hidden');
-        toggleLink.innerText = currentLang === 'ua' ? "Увійти" : "Login";
-    }
-}
-
-function handleAuth() {
-    const nameInput = document.getElementById('user-name').value;
-    const emailInput = document.getElementById('user-email').value;
-    const passInput = document.getElementById('user-pass').value;
-
-    if (isLoginMode) {
-        const savedUser = localStorage.getItem('cfe_user');
-        const savedPass = localStorage.getItem('cfe_pass');
-        if (savedUser && savedPass === passInput) {
-            currentUser = JSON.parse(savedUser);
-            isRegistered = true;
-            updateUI();
-            showPage('dashboard');
-        } else {
-            alert(currentLang === 'ua' ? "Невірні дані!" : "Wrong credentials!");
-        }
-    } else {
-        if (nameInput && emailInput && passInput) {
-            currentUser = { name: nameInput, email: emailInput };
-            localStorage.setItem('cfe_user', JSON.stringify(currentUser));
-            localStorage.setItem('cfe_pass', passInput);
-            isRegistered = true;
-            updateUI();
-            showPage('dashboard');
-        }
-    }
-}
-
-function logout() {
-    localStorage.removeItem('cfe_user');
-    localStorage.removeItem('userChoice');
-    location.reload();
-}
-
-function updateUI() {
-    const status = document.getElementById('auth-status');
-    if (isRegistered && currentUser) {
-        status.innerHTML = `<div style="display:flex; align-items:center; gap:8px;">
-            <img src="${localStorage.getItem('userAvatar') || 'https://via.placeholder.com/30'}" style="width:25px;height:25px;border-radius:50%;object-fit:cover;">
-            <span>${currentUser.name}</span>
-        </div>`;
-        
-        if(document.getElementById('profile-name-display')) {
-            document.getElementById('profile-name-display').innerText = currentUser.name;
-            document.getElementById('profile-email-display').innerText = currentUser.email;
-            document.getElementById('resume-text').value = localStorage.getItem('userResume') || "";
-            document.getElementById('profile-img').src = localStorage.getItem('userAvatar') || 'https://via.placeholder.com/150';
-            updateProfileStats();
-        }
-    }
-}
-
-function showPage(id) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.nav-links li').forEach(li => li.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    const navItem = document.querySelector(`[onclick*="${id}"]`);
-    if (navItem) navItem.classList.add('active');
-}
-
-function handleProtectedAction(id) {
-    if (!isRegistered) showPage('auth');
-    else showPage(id);
-}
-
-function changeLang(lang) {
-    currentLang = lang;
-    localStorage.setItem('cfe_lang', lang);
-    document.querySelectorAll('[data-key]').forEach(el => {
-        const key = el.getAttribute('data-key');
-        if (dictionary[lang][key]) el.innerText = dictionary[lang][key];
-    });
-}
-
-// Профіль: Аватар та Резюме
-document.getElementById('image-input')?.addEventListener('change', function() {
-    const reader = new FileReader();
-    reader.onload = () => {
-        localStorage.setItem('userAvatar', reader.result);
-        updateUI();
-    };
-    reader.readAsDataURL(this.files[0]);
 });
-
-function saveResume() {
-    localStorage.setItem('userResume', document.getElementById('resume-text').value);
-    alert("Збережено!");
-}
-
-function updateProfileStats() {
-    const comp = document.getElementById('completed-count');
-    if (comp) comp.innerText = userChoice ? "1" : "0";
-
-}
